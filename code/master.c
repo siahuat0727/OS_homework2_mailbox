@@ -7,11 +7,15 @@ int main(int argc, char **argv)
 #ifdef DEBUG
 	puts("I am master");
 #endif
+        // check number of parameter
 	if(argc != 5 && argc != 7)
 		error("Invalid parameter numbers");
 
+        // init
 	struct mail_t mail;
 	int n_slave = 1;
+
+        // check 
 	for (int i = 1; i < argc; i += 2) {
 		if (!strcmp("-q", argv[i])) {
 			CHECK_DUPLICATE(mail.data.query_word);
