@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 	struct mail_t mail;
 	int n_slave = 1;
 
-        // check 
+        // get input
 	for (int i = 1; i < argc; i += 2) {
 		if (!strcmp("-q", argv[i])) {
 			CHECK_DUPLICATE(mail.data.query_word);
@@ -28,11 +28,14 @@ int main(int argc, char **argv)
 		} else
 			error("Invalid parameter");
 	}
+
+        //return if input is invalid
 	if(!strlen(mail.data.query_word) || !strlen(mail.file_path) || n_slave < 1)
 		error("Invalid parameter");
 
+	// master fork n_slave times
 	int pid;
-	while(n_slave-- && (pid=fork()) > 0); // parent fork n_slave times
+	while(n_slave-- && (pid=fork()) > 0); 
 
 	// if slave
 	if(pid == 0) {
@@ -42,25 +45,28 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
+        // open mailbox
 	int sysfs_fd = open("/sys/kernel/hw2/mailbox", O_RDWR);
 	if(sysfs_fd < 0)
 		error("open");
 
+        // start finding paths
 	int n_path_found = 0;
 	long long int total_word_count = 0;
 	find_paths(sysfs_fd, &mail, &n_path_found, &total_word_count);
-#ifdef DELAY
-	puts("master delay start");
-	long long int delay = 1000000000LL; //TODO adjust
-	while(delay--);
-	puts("master delay finish");
-#endif
+
+        // receive remainding mail
 	while(n_path_found--)
 		total_word_count += (long long int)receive_until_success(sysfs_fd);
 
+	// close mailbox
 	close(sysfs_fd);
+
+	// print result
 	printf("The total number of query word \"%s\" is %lld\n", mail.data.query_word,
 	       total_word_count);
+
+	// kill when done
 	kill(0, 2);
 	
 	// will not be executed
